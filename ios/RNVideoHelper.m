@@ -88,8 +88,13 @@ RCT_EXPORT_METHOD(compress:(NSString *)source options:(NSDictionary *)options re
     CGFloat bestRatio = MIN(widthRatio, heightRatio);
     CGFloat finalRatio = bestRatio < 1 ? bestRatio : 1;
     // output
-    CGFloat width = originalWidth * finalRatio;
-    CGFloat height = originalHeight * finalRatio;
+    CGFloat width = originalWidth;
+    CGFloat height = originalHeight;
+    
+    if (width > maxWidth || height > maxHeight) {
+        width = originalWidth * finalRatio;
+        height = originalHeight * finalRatio;
+    }
 
     SDAVAssetExportSession *encoder = [SDAVAssetExportSession.alloc initWithAsset:asset];
     
