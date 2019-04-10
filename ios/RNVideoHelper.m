@@ -1,7 +1,7 @@
 
 #import "RNVideoHelper.h"
 #import <AVFoundation/AVFoundation.h>
-#import "SDAVAssetExportSession.h"
+#import <AVFoundation/AVAsset.h>
 
 @implementation RNVideoHelper
 {
@@ -51,52 +51,8 @@ RCT_EXPORT_METHOD(compress:(NSString *)source options:(NSDictionary *)options re
     
     NSNumber *startT = @([options[@"startTime"] floatValue]);
     NSNumber *endT = @([options[@"endTime"] floatValue]);
-    
-    AVAssetTrack *videoTrack = [[asset tracksWithMediaType:AVMediaTypeVideo] objectAtIndex:0];
 
-    CGSize naturalSize = [videoTrack naturalSize];
-
-    CGFloat originalBitrate = [videoTrack estimatedDataRate];
-    
-    CGFloat maxWidth = 720;
-    CGFloat maxHeight = 720;
-    CGFloat bitrate = 1300000;
-    if ([options[@"quality"] isEqual: @"medium"]) {
-        maxWidth = 1280;
-        maxHeight = 1280;
-        bitrate = 1900000;
-    } else if ([options[@"quality"] isEqual: @"high"]) {
-        maxWidth = 1920;
-        maxHeight = 1920;
-        bitrate = 2600000;
-    }
-    
-    CGFloat originalWidth = naturalSize.width;
-    CGFloat originalHeight = naturalSize.height;
-    
-    CGSize transformedVideoSize =
-    CGSizeApplyAffineTransform(videoTrack.naturalSize, videoTrack.preferredTransform);
-    bool videoIsPortrait = transformedVideoSize.width < transformedVideoSize.height;
-
-    if (videoIsPortrait) {
-        originalWidth = naturalSize.height;
-        originalHeight = naturalSize.width;
-    }
-    
-    CGFloat widthRatio = maxWidth / originalWidth;
-    CGFloat heightRatio = maxHeight / originalHeight;
-    CGFloat bestRatio = MIN(widthRatio, heightRatio);
-    CGFloat finalRatio = bestRatio < 1 ? bestRatio : 1;
-    // output
-    CGFloat width = originalWidth;
-    CGFloat height = originalHeight;
-    
-    if (width > maxWidth || height > maxHeight) {
-        width = originalWidth * finalRatio;
-        height = originalHeight * finalRatio;
-    }
-
-    SDAVAssetExportSession *encoder = [SDAVAssetExportSession.alloc initWithAsset:asset];
+    AVAssetExportSession *encoder = [AVAssetExportSession.alloc initWithAsset:asset presetName:AVAssetExportPresetMediumQuality];
     
     if (startT && [startT floatValue] > duration) {
         reject(@"start_time_error", @"Start time is longer than video duration", nil);
@@ -113,23 +69,6 @@ RCT_EXPORT_METHOD(compress:(NSString *)source options:(NSDictionary *)options re
         CMTimeRange exportTimeRange = CMTimeRangeFromTimeToTime(startTime, stopTime);
         encoder.timeRange = exportTimeRange;
     }
-    
-    encoder.videoSettings = @{
-      AVVideoCodecKey: AVVideoCodecH264,
-      AVVideoWidthKey: @(width),
-      AVVideoHeightKey: @(height),
-      AVVideoCompressionPropertiesKey: @{
-              AVVideoAverageBitRateKey: @(bitrate > originalBitrate ? originalBitrate : bitrate),
-          AVVideoProfileLevelKey: AVVideoProfileLevelH264BaselineAutoLevel,
-        },
-    };
-    
-    encoder.audioSettings = @{
-      AVFormatIDKey: @(kAudioFormatMPEG4AAC),
-      AVNumberOfChannelsKey: @1,
-      AVSampleRateKey: @44100,
-      AVEncoderBitRateKey: @128000,
-    };
     
     encoder.outputFileType = AVFileTypeMPEG4;
     encoder.outputURL = [NSURL fileURLWithPath:
