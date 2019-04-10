@@ -11,7 +11,7 @@ import com.facebook.react.modules.core.DeviceEventManagerModule;
 
 import android.net.Uri;
 import android.util.Log;
-
+import android.os.Environment;
 import java.io.File;
 import java.util.UUID;
 
@@ -40,9 +40,10 @@ public class RNVideoHelperModule extends ReactContextBaseJavaModule {
   @ReactMethod
   public void compress(String source, ReadableMap options, final Promise pm) {
     String inputUri = Uri.parse(source).getPath();
-    File outputDir = reactContext.getCacheDir();
-
-    final String outputUri = String.format("%s/%s.mp4", outputDir.getPath(), UUID.randomUUID().toString());
+  
+    String fullPath = Environment.getExternalStorageDirectory().getAbsolutePath() + "/video/";
+    String fileName = "video-" + UUID.randomUUID().toString() + ".mp4";
+    final String outputUri = fullPath + fileName;
 
     String quality = options.hasKey("quality") ? options.getString("quality") : "";
     long startTime = options.hasKey("startTime") ? (long)options.getDouble("startTime") : -1;
@@ -59,7 +60,7 @@ public class RNVideoHelperModule extends ReactContextBaseJavaModule {
         @Override
         public void onSuccess() {
           //Finish successfully
-          pm.resolve(outputUri);
+          pm.resolve("file://" + outputUri);
 
         }
 
