@@ -41,9 +41,9 @@ public class RNVideoHelperModule extends ReactContextBaseJavaModule {
   public void compress(String source, ReadableMap options, final Promise pm) {
     String inputUri = Uri.parse(source).getPath();
   
-    String fullPath = Environment.getExternalStorageDirectory().getAbsolutePath() + "/video/";
+    String fullPath = Environment.getExternalStorageDirectory().getAbsolutePath();
     String fileName = "video-" + UUID.randomUUID().toString() + ".mp4";
-    final String outputUri = fullPath + fileName;
+    final String outputUri = fullPath + File.separator + fileName;
 
     String quality = options.hasKey("quality") ? options.getString("quality") : "";
     long startTime = options.hasKey("startTime") ? (long)options.getDouble("startTime") : -1;
